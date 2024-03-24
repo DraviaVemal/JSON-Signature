@@ -1,0 +1,34 @@
+{
+  "name": "json-signature",
+  "version": "0.2.0",
+  "description": "",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "JSON Signature",
+    "Unique Signature",
+    "Unique Hash"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "prepublish": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DraviaVemal/JSON-Signature.git"
+  },
+  "author": "DraviaVemal",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DraviaVemal/JSON-Signature/issues"
+  },
+  "homepage": "https://github.com/DraviaVemal/JSON-Signature#readme",
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.3"
+  }
+}

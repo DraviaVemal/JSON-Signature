@@ -1,0 +1,8 @@
+# ignore IDE files
+/.vscode/**
+# ignore Node files
+/node_modules/**
+
+# ignore build files
+/dist/**
+/out/**
