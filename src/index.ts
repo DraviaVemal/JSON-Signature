@@ -80,7 +80,17 @@ export class JsonSignature {
   };
 
   private ProcessMasterInput = (data: any): void => {
-    if (typeof data === "object") {
+    if (
+      typeof data === "string" ||
+      typeof data === "number" ||
+      typeof data === "boolean" ||
+      typeof data === "undefined" ||
+      typeof data === "bigint" ||
+      data === null ||
+      this.isDate(data)
+    ) {
+      this.result.push(data?.toString() ?? '""');
+    } else if (typeof data === "object") {
       if (Array.isArray(data)) {
         this.ProcessArrayNode(data);
       } else if (this.isValidJSON(data)) {
@@ -105,7 +115,15 @@ export class JsonSignature {
   public GetSignatureForPayload = (
     data: any,
     options?: {
+      /**
+       * Crypt encryption strategy
+       * @default sha256
+       */
       hashType?: string;
+      /**
+       * Digest hash result is encoded into once of the types
+       * @default hex
+       */
       digestType?: "base64" | "base64url" | "hex" | "binary";
       /**
        * TODO: This is yet to be implemented
