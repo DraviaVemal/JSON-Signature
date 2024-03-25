@@ -1,6 +1,6 @@
 {
   "name": "json-signature",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -11,7 +11,9 @@
   "keywords": [
     "JSON Signature",
     "Unique Signature",
-    "Unique Hash"
+    "Unique Hash",
+    "Data Validation",
+    "Cache Signature"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

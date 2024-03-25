@@ -2,7 +2,6 @@
 
 This package enables the generation of unique hash signatures for provided payloads.
 It normalise json key order so the same payload data with different key order generates same key.
-It preserves the array position when signing, ensuring that changes in the array position of the same data result in different signatures.
 
 ## Installation
 
@@ -15,13 +14,21 @@ npm i json-signature
 ## Usage
 
 ```javascript
-const jsonSignature = new JsonSignature();
+import { JsonSignature } from "json-signature";
+
 console.log(
-  jsonSignature.GetSignatureForPayload({
-    key1: "value1",
-    key2: "value2",
-    array_key: [1, 2, 3],
-  })
+  JsonSignature.GetSignatureForPayload(
+    {
+      key1: "value1",
+      key2: "value2",
+      array_key: [1, 2, 3],
+    },
+    {
+      hashType: "sha256",
+      digestType: "hex",
+      ignoreArrayOrder: true,
+    }
+  )
 );
 ```
 

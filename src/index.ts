@@ -6,18 +6,13 @@ import { createHash } from "crypto";
  * @description Class used to create a normalised data pattern for JSON input and generate sha256 signature. This helps in maintaing the stability of signature for different order of same data.
  */
 export class JsonSignature {
-  private result: string[];
-
-  constructor() {
-    this.result = [];
-  }
-
-  private isDate = (value: any) => {
+  private static isIgnoreArrayPosition: boolean = false;
+  private static isDate = (value: any) => {
     const date = new Date(value);
     return !isNaN(date.getTime());
   };
 
-  private isValidJSON = (jsonString: any) => {
+  private static isValidJSON = (jsonString: any) => {
     try {
       JSON.parse(JSON.stringify(jsonString));
       return true;
@@ -26,19 +21,20 @@ export class JsonSignature {
     }
   };
 
-  private GetSortedKeys = (data: any): string[] => {
+  private static GetSortedKeys = (data: any): string[] => {
     return Object.keys(data).sort();
   };
 
-  private ProcessJsonNode = (data: any): void => {
-    this.result.push("{");
+  private static ProcessJsonNode = (data: any): string[] => {
+    const result: string[] = [];
+    result.push("{");
     const keys = this.GetSortedKeys(data);
     keys.forEach((key, index) => {
       if (index > 0) {
-        this.result.push(",");
+        result.push(",");
       }
-      this.result.push(key.toString());
-      this.result.push(":");
+      result.push(key.toString());
+      result.push(":");
       if (
         typeof data[key] === "string" ||
         typeof data[key] === "number" ||
@@ -48,20 +44,20 @@ export class JsonSignature {
         data[key] === null ||
         this.isDate(data[key])
       ) {
-        this.result.push(data[key]?.toString() ?? '""');
+        result.push(data[key]?.toString() ?? '""');
       } else {
-        this.ProcessMasterInput(data[key]);
+        result.push(...this.ProcessMasterInput(data[key]));
       }
     });
-    this.result.push("}");
+    result.push("}");
+    return result;
   };
 
-  private ProcessArrayNode = (data: any[]): void => {
-    this.result.push("[");
+  private static ProcessArrayNode = (data: any[]): string[] => {
+    const result: string[] = [];
+    const unSortedResult: string[] = [];
+    result.push("[");
     data.forEach((item, index) => {
-      if (index > 0) {
-        this.result.push(",");
-      }
       if (
         typeof item === "string" ||
         typeof item === "number" ||
@@ -71,15 +67,21 @@ export class JsonSignature {
         item === null ||
         this.isDate(item)
       ) {
-        this.result.push(item?.toString() ?? '""');
+        unSortedResult.push(item?.toString() ?? '""');
       } else {
-        this.ProcessMasterInput(item);
+        unSortedResult.push(this.ProcessMasterInput(item).join(""));
       }
     });
-    this.result.push("]");
+    if (this.isIgnoreArrayPosition) {
+      unSortedResult.sort();
+    }
+    result.push(unSortedResult.join());
+    result.push("]");
+    return result;
   };
 
-  private ProcessMasterInput = (data: any): void => {
+  private static ProcessMasterInput = (data: any): string[] => {
+    const result: string[] = [];
     if (
       typeof data === "string" ||
       typeof data === "number" ||
@@ -89,12 +91,12 @@ export class JsonSignature {
       data === null ||
       this.isDate(data)
     ) {
-      this.result.push(data?.toString() ?? '""');
+      result.push(data?.toString() ?? '""');
     } else if (typeof data === "object") {
       if (Array.isArray(data)) {
-        this.ProcessArrayNode(data);
+        result.push(...this.ProcessArrayNode(data));
       } else if (this.isValidJSON(data)) {
-        this.ProcessJsonNode(data);
+        result.push(...this.ProcessJsonNode(data));
       } else {
         throw new Error(
           "Input Payload has data type not supported by Json-Signature for signing."
@@ -105,14 +107,14 @@ export class JsonSignature {
         "Input Payload has data type not supported by Json-Signature for signing."
       );
     }
+    return result;
   };
 
-  private NormaliseJsonToString = (data: any): string => {
-    this.ProcessMasterInput(data);
-    return this.result.join("");
+  private static NormaliseJsonToString = (data: any): string => {
+    return this.ProcessMasterInput(data).join("");
   };
 
-  public GetSignatureForPayload = (
+  public static GetSignatureForPayload = (
     data: any,
     options?: {
       /**
@@ -126,13 +128,16 @@ export class JsonSignature {
        */
       digestType?: "base64" | "base64url" | "hex" | "binary";
       /**
-       * TODO: This is yet to be implemented
+       * Skips preserving the array position when signing, ensuring that changes in the array position of the same data result in different signatures.
        */
       ignoreArrayOrder?: boolean;
     }
   ): string => {
+    this.isIgnoreArrayPosition = options?.ignoreArrayOrder ?? false;
+    const res = this.NormaliseJsonToString(data);
+    console.log(res);
     return createHash(options?.hashType ?? "sha256")
-      .update(this.NormaliseJsonToString(data))
+      .update(res)
       .digest(options?.digestType ?? "hex");
   };
 }
