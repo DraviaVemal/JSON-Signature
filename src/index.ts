@@ -6,6 +6,29 @@ import { createHash } from "crypto";
  * @description Class used to create a normalised data pattern for JSON input and generate sha256 signature. This helps in maintaing the stability of signature for different order of same data.
  */
 export class JsonSignature {
+  /**
+   * @description No need to create object item.
+   * @example ```javascript
+        import { JsonSignature } from "json-signature";
+
+        console.log(
+          JsonSignature.GetSignatureForPayload(
+            {
+              key1: "value1",
+              key2: "value2",
+              array_key: [1, 2, 3],
+            },
+            {
+              hashType: "sha256",
+              digestType: "hex",
+              ignoreArrayOrder: true,
+            }
+          )
+        );
+        ```
+   */
+  private constructor() {}
+
   private static isIgnoreArrayPosition: boolean = false;
   private static isDate = (value: any) => {
     const date = new Date(value);
