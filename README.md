@@ -17,7 +17,7 @@ npm i json-signature
 import { JsonSignature } from "json-signature";
 
 console.log(
-  JsonSignature.GetSignatureForPayload(
+  JsonSignature.GetSignatureForData(
     {
       key1: "value1",
       key2: "value2",

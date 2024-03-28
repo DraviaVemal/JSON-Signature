@@ -12,7 +12,7 @@ export class JsonSignature {
         import { JsonSignature } from "json-signature";
 
         console.log(
-          JsonSignature.GetSignatureForPayload(
+          JsonSignature.GetSignatureForData(
             {
               key1: "value1",
               key2: "value2",
@@ -29,6 +29,8 @@ export class JsonSignature {
    */
   private constructor() { }
 
+  private static UNSUPPORTED_ERROR_MSG = "Input Payload has data type not supported by Json-Signature for signing.";
+
   private static isIgnoreArrayPosition: boolean = false;
   private static isDate = (value: any) => {
     const date = new Date(value);
@@ -44,29 +46,28 @@ export class JsonSignature {
     }
   };
 
+  private static isSupportedType = (data: any) => {
+    return typeof data === "string" ||
+      typeof data === "number" ||
+      typeof data === "boolean" ||
+      typeof data === "undefined" ||
+      typeof data === "bigint" ||
+      data === null ||
+      this.isDate(data)
+  }
+
   private static GetSortedKeys = (data: any): string[] => {
     return Object.keys(data).sort();
   };
 
   private static ProcessJsonNode = (data: any): string[] => {
-    const result: string[] = [];
-    result.push("{");
-    const keys = this.GetSortedKeys(data);
-    keys.forEach((key, index) => {
+    const result: string[] = ["{"];
+    this.GetSortedKeys(data).forEach((key, index) => {
       if (index > 0) {
         result.push(",");
       }
-      result.push(key.toString());
-      result.push(":");
-      if (
-        typeof data[key] === "string" ||
-        typeof data[key] === "number" ||
-        typeof data[key] === "boolean" ||
-        typeof data[key] === "undefined" ||
-        typeof data[key] === "bigint" ||
-        data[key] === null ||
-        this.isDate(data[key])
-      ) {
+      result.push(key.toString(), ":");
+      if (this.isSupportedType(data[key])) {
         result.push(data[key]?.toString() ?? '""');
       } else {
         result.push(...this.ProcessMasterInput(data[key]));
@@ -77,43 +78,22 @@ export class JsonSignature {
   };
 
   private static ProcessArrayNode = (data: any[]): string[] => {
-    const result: string[] = [];
+    const result: string[] = ["["];
     const unSortedResult: string[] = [];
-    result.push("[");
-    data.forEach((item, index) => {
-      if (
-        typeof item === "string" ||
-        typeof item === "number" ||
-        typeof item === "boolean" ||
-        typeof item === "undefined" ||
-        typeof item === "bigint" ||
-        item === null ||
-        this.isDate(item)
-      ) {
+    data.forEach((item) => {
+      if (this.isSupportedType(item)) {
         unSortedResult.push(item?.toString() ?? '""');
       } else {
         unSortedResult.push(this.ProcessMasterInput(item).join(""));
       }
     });
-    if (this.isIgnoreArrayPosition) {
-      unSortedResult.sort();
-    }
-    result.push(unSortedResult.join());
-    result.push("]");
+    result.push(this.isIgnoreArrayPosition ? unSortedResult.sort().join() : unSortedResult.join(), "]");
     return result;
   };
 
   private static ProcessMasterInput = (data: any): string[] => {
     const result: string[] = [];
-    if (
-      typeof data === "string" ||
-      typeof data === "number" ||
-      typeof data === "boolean" ||
-      typeof data === "undefined" ||
-      typeof data === "bigint" ||
-      data === null ||
-      this.isDate(data)
-    ) {
+    if (this.isSupportedType(data)) {
       result.push(data?.toString() ?? '""');
     } else if (typeof data === "object") {
       if (Array.isArray(data)) {
@@ -121,14 +101,10 @@ export class JsonSignature {
       } else if (this.isValidJSON(data)) {
         result.push(...this.ProcessJsonNode(data));
       } else {
-        throw new Error(
-          "Input Payload has data type not supported by Json-Signature for signing."
-        );
+        throw new Error(this.UNSUPPORTED_ERROR_MSG);
       }
     } else {
-      throw new Error(
-        "Input Payload has data type not supported by Json-Signature for signing."
-      );
+      throw new Error(this.UNSUPPORTED_ERROR_MSG);
     }
     return result;
   };
@@ -143,11 +119,17 @@ export class JsonSignature {
    * @param options Provides additional option to customise
    * @returns hash string
    */
-  public static GetSignatureForPayload = (
+  public static GetSignatureForData = (
+    /**
+     * Input Data to be signed
+     */
     data: any,
+    /**
+     * Available customization options
+     */
     options?: {
       /**
-       * Crypt encryption strategy
+       * Crypt encryption algorithms use flags supported by OpenSSL
        * @default sha256
        */
       hashType?: string;
