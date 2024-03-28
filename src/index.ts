@@ -27,7 +27,7 @@ export class JsonSignature {
         );
         ```
    */
-  private constructor() {}
+  private constructor() { }
 
   private static isIgnoreArrayPosition: boolean = false;
   private static isDate = (value: any) => {
@@ -137,6 +137,12 @@ export class JsonSignature {
     return this.ProcessMasterInput(data).join("");
   };
 
+  /**
+   * Generate same hash signature for provided input irrespective of key orders of JSON
+   * @param data Any input payload that needs hash sign
+   * @param options Provides additional option to customise
+   * @returns hash string
+   */
   public static GetSignatureForPayload = (
     data: any,
     options?: {
@@ -157,10 +163,8 @@ export class JsonSignature {
     }
   ): string => {
     this.isIgnoreArrayPosition = options?.ignoreArrayOrder ?? false;
-    const res = this.NormaliseJsonToString(data);
-    console.log(res);
     return createHash(options?.hashType ?? "sha256")
-      .update(res)
+      .update(this.NormaliseJsonToString(data))
       .digest(options?.digestType ?? "hex");
   };
 }
